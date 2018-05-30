@@ -1,0 +1,230 @@
+---
+- hosts: all
+#  gather_facts: no
+#  become: yes
+  tasks:
+    - name: create log folder 
+      file: path=/vagrant/log state=directory
+
+    - name: install java
+      yum:
+        name: java-1.8.0-openjdk
+        state: latest
+      become: yes
+      become_method: sudo
+
+    - name: install git
+      yum:
+        name: git
+        state: latest
+      become: yes
+      become_method: sudo
+
+    - name: install curl
+      yum:
+        name: curl
+        state: latest
+      become: yes
+      become_method: sudo
+    
+    - name: config sysctl.conf
+      lineinfile:
+        path: /etc/sysctl.conf
+        insertafter: 'EOF'
+        line: 'vm.max_map_count=262144'
+      become: yes
+      become_method: sudo
+
+    - name: config sysctl.conf
+      lineinfile:
+        path: /etc/sysctl.conf
+        insertafter: 'EOF'
+        line: 'fs.file-max=65536'
+      become: yes
+      become_method: sudo
+
+    - name: reload sysctl.conf
+      command: sysctl -p
+      become: yes
+      become_method: sudo
+
+    - name: config limits.conf
+      lineinfile:
+        path: /etc/security/limits.conf
+        regexp: '^# End of file'
+        insertbefore: '^# End of file'
+        line: 'vagrant  hard  nofile  65536'
+      become: yes
+      become_method: sudo
+
+    - name: config limits.conf
+      lineinfile:
+        path: /etc/security/limits.conf
+        regexp: '^# End of file'
+        insertbefore: '^# End of file'
+        line: 'vagrant  soft  nofile  65536'
+      become: yes
+      become_method: sudo
+
+    - name: config limits.conf
+      lineinfile:
+        path: /etc/security/limits.conf
+        regexp: '^# End of file'
+        insertbefore: '^# End of file'
+        line: 'vagrant  -  nofile  65536'
+      become: yes
+      become_method: sudo
+
+    - name: set ulimit as root 
+      shell: ulimit -n 65536
+      become: yes
+      become_method: sudo
+
+    - name: refresh session
+      shell: sleep 1; pkill -u vagrant sshd
+      async: 3
+      poll: 2
+
+    - name: set ulimit
+      shell: ulimit -n 65536
+
+    - name: ulimit
+      shell: ulimit -Hn
+      register: hard
+
+    - name: ulimit -Hn
+      debug: 
+        var: hard.stdout
+
+    - name: create home folder elasticsearch
+      file: path=/home/vagrant/tool/elastic/elasticsearch/elasticsearch-6.2.4 state=directory
+
+    - name: download and unpackage elasticsearch 6.2.4
+      unarchive:
+        src: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.4.tar.gz
+        dest: /home/vagrant/tool/elastic/elasticsearch
+        remote_src: yes
+
+    - name: config elasticsearch
+      lineinfile:
+        path: /home/vagrant/tool/elastic/elasticsearch/elasticsearch-6.2.4/config/elasticsearch.yml
+        insertafter: 'EOF'
+        line: 'network.host: 0.0.0.0'
+
+    - name: start elasticsearch
+      shell: nohup /home/vagrant/tool/elastic/elasticsearch/elasticsearch-6.2.4/bin/elasticsearch </dev/null >/dev/null 2>&1 &
+
+    - name: create home folder kibana
+      file: path=/home/vagrant/tool/elastic/kibana/kibana-6.2.4-linux-x86_64 state=directory
+
+    - name: download and unpackage kibana 6.2.4
+      unarchive:
+        src: https://artifacts.elastic.co/downloads/kibana/kibana-6.2.4-linux-x86_64.tar.gz
+        dest: /home/vagrant/tool/elastic/kibana
+        remote_src: yes
+
+    - name: config kibana
+      lineinfile:
+        path: /home/vagrant/tool/elastic/kibana/kibana-6.2.4-linux-x86_64/config/kibana.yml
+        insertafter: 'EOF'
+        line: 'server.host: 0.0.0.0'
+
+    - name: config kibana
+      lineinfile:
+        path: /home/vagrant/tool/elastic/kibana/kibana-6.2.4-linux-x86_64/config/kibana.yml
+        insertafter: 'EOF'
+        line: 'elasticsearch.url: "http://localhost:9200"'
+
+    - name: start kibana
+      shell: nohup /home/vagrant/tool/elastic/kibana/kibana-6.2.4-linux-x86_64/bin/kibana </dev/null >/dev/null 2>&1 &
+
+    - name: create home folder logstash
+      file: path=/home/vagrant/tool/elastic/logstash/logstash-6.2.4 state=directory
+
+    - name: download and unpackage logstash 6.2.4
+      unarchive:
+        src: https://artifacts.elastic.co/downloads/logstash/logstash-6.2.4.tar.gz
+        dest: /home/vagrant/tool/elastic/logstash
+        remote_src: yes
+
+    - name: create logstash configuration
+      blockinfile:
+        path: /home/vagrant/tool/elastic/logstash/logstash-6.2.4/config/logstash.conf
+        create: yes
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+        block: |
+          input { stdin { } }
+          output {
+            elasticsearch { hosts => ["localhost:9200"] }
+            stdout { codec => rubydebug }
+          }
+
+    - name: start logstash
+      shell: nohup /home/vagrant/tool/elastic/logstash/logstash-6.2.4/bin/logstash -f ../config/logstash.conf </dev/null >/dev/null 2>&1 &
+
+    - name: create folder filebeat
+      file: path=/home/vagrant/tool/elastic/beats/filebeat state=directory
+
+    - name: install filebeat
+      yum:
+        name: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.2.4-x86_64.rpm
+        state: present
+      become: yes
+      become_method: sudo
+
+    - name: config filebeat
+      blockinfile:
+        path: /etc/filebeat/filebeatLM.yml
+        create: yes
+        owner: root
+        group: root
+        mode: 0644
+        block: |
+          filebeat.prospectors:
+
+          - type: log
+            enabled: true
+
+            paths:
+              - /vagrant/log/*.csv
+
+          filebeat.config.modules:
+            path: ${path.config}/modules.d/*.yml
+            reload.enabled: false
+
+          setup.template.settings:
+            index.number_of_shards: 3
+
+          setup.kibana:
+
+          output.logstash:
+            hosts: ["localhost:5044"]
+      become: yes
+      become_method: sudo
+
+    - name: start elasticsearch
+      shell: nohup /usr/bin/filebeat -e -c /etc/filebeat/filebeatLM.yml </dev/null >/dev/null 2>&1 &
+
+
+#    - name: install the 'Gnome desktop' environment group
+#      yum:
+#        name: "@^gnome-desktop-environment"
+#        state: present
+#      become: yes
+#      become_method: sudo
+
+#    - name: isolate graphical.target
+#      shell: systemctl isolate graphical.target
+#      become: yes
+#      become_method: sudo
+
+#    - name: set-default graphical.target
+#      shell: systemctl set-default graphical.target
+#      become: yes
+#      become_method: sudo
+
+
+
+      
