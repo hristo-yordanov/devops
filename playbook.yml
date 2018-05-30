@@ -155,14 +155,39 @@
         group: vagrant
         mode: 0644
         block: |
-          input { stdin { } }
+          input {
+            beats {
+                port => "5044"
+            }
+          }
+
+          filter {
+              csv {
+                  columns => ["HISTORY_ID","Date Time","Severity Level","Activity Category","Activity Name","Source Action User ID (Integer)","Target Action User ID (Integer)","Error Code","Description","Use Case","Additional Information"]
+                  skip_header => true
+                  separator => ","
+                  convert => {
+                    "HISTORY_ID" => "integer"
+                    "Date Time" => "date"
+                    "Source Action User ID (Integer)" => "integer"
+                    "Target Action User ID (Integer)" => "integer"
+                    "Error Code" => "integer"
+                  }
+              }
+              date {
+                  match => ["Date Time", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"]
+                  target => "@timestamp"
+              }
+          }
           output {
-            elasticsearch { hosts => ["localhost:9200"] }
-            stdout { codec => rubydebug }
+              #stdout { codec => rubydebug }
+              elasticsearch {
+                  hosts => [ "localhost:9200" ]
+              }
           }
 
     - name: start logstash
-      shell: nohup /home/vagrant/tool/elastic/logstash/logstash-6.2.4/bin/logstash -f ../config/logstash.conf </dev/null >/dev/null 2>&1 &
+      shell: nohup /home/vagrant/tool/elastic/logstash/logstash-6.2.4/bin/logstash -f /home/vagrant/tool/elastic/logstash/logstash-6.2.4/config/logstash.conf </dev/null >/dev/null 2>&1 &
 
     - name: create folder filebeat
       file: path=/home/vagrant/tool/elastic/beats/filebeat state=directory
@@ -204,8 +229,12 @@
       become: yes
       become_method: sudo
 
-    - name: start elasticsearch
+    - name: start filebeat
       shell: nohup /usr/bin/filebeat -e -c /etc/filebeat/filebeatLM.yml </dev/null >/dev/null 2>&1 &
+      become: yes
+      become_method: sudo
+
+
 
 
 #    - name: install the 'Gnome desktop' environment group
