@@ -1,0 +1,159 @@
+[
+  {
+    "_id": "c0644590-5e58-11e8-9384-3fa80ede9472",
+    "_type": "dashboard",
+    "_source": {
+      "title": "IO diagaram",
+      "hits": 0,
+      "description": "",
+      "panelsJSON": "[{\"panelIndex\":\"1\",\"gridData\":{\"x\":0,\"y\":0,\"w\":12,\"h\":9,\"i\":\"1\"},\"version\":\"6.2.4\",\"type\":\"visualization\",\"id\":\"91b659e0-5e58-11e8-9384-3fa80ede9472\"}]",
+      "optionsJSON": "{\"darkTheme\":false,\"useMargins\":true,\"hidePanelTitles\":false}",
+      "version": 1,
+      "timeRestore": false,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"lucene\"},\"filter\":[],\"highlightAll\":true,\"version\":true}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "394ca2a0-5da9-11e8-9384-3fa80ede9472",
+    "_type": "dashboard",
+    "_source": {
+      "title": "Catalogs",
+      "hits": 0,
+      "description": "",
+      "panelsJSON": "[{\"embeddableConfig\":{\"vis\":{\"legendOpen\":false}},\"gridData\":{\"h\":5,\"i\":\"1\",\"w\":4,\"x\":0,\"y\":0},\"id\":\"2f060520-5da9-11e8-9384-3fa80ede9472\",\"panelIndex\":\"1\",\"title\":\"Severity Level\",\"type\":\"visualization\",\"version\":\"6.2.4\"},{\"embeddableConfig\":{\"spy\":null,\"vis\":{\"legendOpen\":false}},\"gridData\":{\"h\":5,\"i\":\"2\",\"w\":4,\"x\":8,\"y\":0},\"id\":\"336ea480-5dab-11e8-9384-3fa80ede9472\",\"panelIndex\":\"2\",\"title\":\"Activity Name\",\"type\":\"visualization\",\"version\":\"6.2.4\"},{\"embeddableConfig\":{\"spy\":null,\"vis\":{\"legendOpen\":false}},\"gridData\":{\"h\":5,\"i\":\"3\",\"w\":4,\"x\":4,\"y\":0},\"id\":\"57d1b780-5dac-11e8-9384-3fa80ede9472\",\"panelIndex\":\"3\",\"title\":\"Activity Category\",\"type\":\"visualization\",\"version\":\"6.2.4\"},{\"gridData\":{\"h\":4,\"i\":\"4\",\"w\":4,\"x\":0,\"y\":5},\"id\":\"ec320d40-5dbf-11e8-9384-3fa80ede9472\",\"panelIndex\":\"4\",\"title\":\"\",\"type\":\"visualization\",\"version\":\"6.2.4\"},{\"embeddableConfig\":{\"vis\":{\"params\":{\"sort\":{\"columnIndex\":1,\"direction\":\"asc\"}}}},\"gridData\":{\"h\":4,\"i\":\"5\",\"w\":4,\"x\":4,\"y\":5},\"id\":\"a4066ad0-5dc3-11e8-9384-3fa80ede9472\",\"panelIndex\":\"5\",\"title\":\"\",\"type\":\"visualization\",\"version\":\"6.2.4\"},{\"gridData\":{\"h\":4,\"i\":\"6\",\"w\":4,\"x\":8,\"y\":5},\"id\":\"a2916190-5dc4-11e8-9384-3fa80ede9472\",\"panelIndex\":\"6\",\"title\":\"\",\"type\":\"visualization\",\"version\":\"6.2.4\"}]",
+      "optionsJSON": "{\"darkTheme\":true,\"hidePanelTitles\":false,\"useMargins\":true}",
+      "version": 1,
+      "timeRestore": false,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[],\"highlightAll\":true,\"version\":true}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "91b659e0-5e58-11e8-9384-3fa80ede9472",
+    "_type": "visualization",
+    "_source": {
+      "title": "IO Diagaram",
+      "visState": "{\"title\":\"IO Diagaram\",\"type\":\"vega\",\"params\":{\"spec\":\"{\\n  $schema: https://vega.github.io/schema/vega/v3.0.json\\n  data: [\\n    {\\n      name: rawData\\n      url: {\\n        %context%: true\\n        %timefield%: @timestamp\\n        index: logstash-*\\n        body: {\\n          size: 0\\n          aggs: {\\n            table: {\\n              composite: {\\n                size: 10000\\n                sources: [\\n                  {\\n                    stk1: {\\n                      terms: {field: \\\"Source Action User ID (Integer)\\\"}\\n                    }\\n                  }\\n                  {\\n                    stk2: {\\n                      terms: {field: \\\"Target Action User ID (Integer)\\\"}\\n                    }\\n                  }\\n                ]\\n              }\\n            }\\n          }\\n        }\\n      }\\n      // From the result, take just the data we are interested in\\n      format: {property: \\\"aggregations.table.buckets\\\"}\\n      // Convert key.stk1 -> stk1 for simpler access below\\n      transform: [\\n        {type: \\\"formula\\\", expr: \\\"datum.key.stk1\\\", as: \\\"stk1\\\"}\\n        {type: \\\"formula\\\", expr: \\\"datum.key.stk2\\\", as: \\\"stk2\\\"}\\n        {type: \\\"formula\\\", expr: \\\"datum.doc_count\\\", as: \\\"size\\\"}\\n      ]\\n    }\\n    {\\n      name: nodes\\n      source: rawData\\n      transform: [\\n        {\\n          type: filter\\n          expr: !groupSelector || groupSelector.stk1 == datum.stk1 || groupSelector.stk2 == datum.stk2\\n        }\\n        {type: \\\"formula\\\", expr: \\\"datum.stk1+datum.stk2\\\", as: \\\"key\\\"}\\n        {\\n          type: fold\\n          fields: [\\\"stk1\\\", \\\"stk2\\\"]\\n          as: [\\\"stack\\\", \\\"grpId\\\"]\\n        }\\n        {\\n          type: formula\\n          expr: datum.stack == 'stk1' ? datum.stk1+datum.stk2 : datum.stk2+datum.stk1\\n          as: sortField\\n        }\\n        {\\n          type: stack\\n          groupby: [\\\"stack\\\"]\\n          sort: {field: \\\"sortField\\\", order: \\\"descending\\\"}\\n          field: size\\n        }\\n        // calculate vertical center point for each node, used to draw edges\\n        {type: \\\"formula\\\", expr: \\\"(datum.y0+datum.y1)/2\\\", as: \\\"yc\\\"}\\n      ]\\n    }\\n    {\\n      name: groups\\n      source: nodes\\n      transform: [\\n        {\\n          type: aggregate\\n          groupby: [\\\"stack\\\", \\\"grpId\\\"]\\n          fields: [\\\"size\\\"]\\n          ops: [\\\"sum\\\"]\\n          as: [\\\"total\\\"]\\n        }\\n        {\\n          type: stack\\n          groupby: [\\\"stack\\\"]\\n          sort: {field: \\\"grpId\\\", order: \\\"descending\\\"}\\n          field: total\\n        }\\n        {type: \\\"formula\\\", expr: \\\"scale('y', datum.y0)\\\", as: \\\"scaledY0\\\"}\\n        {type: \\\"formula\\\", expr: \\\"scale('y', datum.y1)\\\", as: \\\"scaledY1\\\"}\\n        {type: \\\"formula\\\", expr: \\\"datum.stack == 'stk1'\\\", as: \\\"rightLabel\\\"}\\n        {\\n          type: formula\\n          expr: datum.total/domain('y')[1]\\n          as: percentage\\n        }\\n      ]\\n    }\\n    {\\n      // This is a temp lookup table with all the 'stk2' stack nodes\\n      name: destinationNodes\\n      source: nodes\\n      transform: [\\n        {type: \\\"filter\\\", expr: \\\"datum.stack == 'stk2'\\\"}\\n      ]\\n    }\\n    {\\n      name: edges\\n      source: nodes\\n      transform: [\\n        {type: \\\"filter\\\", expr: \\\"datum.stack == 'stk1'\\\"}\\n        {\\n          type: lookup\\n          from: destinationNodes\\n          key: key\\n          fields: [\\\"key\\\"]\\n          as: [\\\"target\\\"]\\n        }\\n        {\\n          type: linkpath\\n          orient: horizontal\\n          shape: diagonal\\n          sourceY: {expr: \\\"scale('y', datum.yc)\\\"}\\n          sourceX: {expr: \\\"scale('x', 'stk1') + bandwidth('x')\\\"}\\n          targetY: {expr: \\\"scale('y', datum.target.yc)\\\"}\\n          targetX: {expr: \\\"scale('x', 'stk2')\\\"}\\n        }\\n        {\\n          type: formula\\n          expr: range('y')[0]-scale('y', datum.size)\\n          as: strokeWidth\\n        }\\n        {\\n          type: formula\\n          expr: datum.size/domain('y')[1]\\n          as: percentage\\n        }\\n      ]\\n    }\\n  ]\\n  scales: [\\n    {\\n      name: x\\n      type: band\\n      range: width\\n      domain: [\\\"stk1\\\", \\\"stk2\\\"]\\n      paddingOuter: 0.05\\n      paddingInner: 0.95\\n    }\\n    {\\n      name: y\\n      type: linear\\n      range: height\\n      domain: {data: \\\"nodes\\\", field: \\\"y1\\\"}\\n    }\\n    {\\n      name: color\\n      type: ordinal\\n      range: category\\n      domain: {data: \\\"rawData\\\", field: \\\"stk1\\\"}\\n    }\\n    {\\n      name: stackNames\\n      type: ordinal\\n      range: [\\\"Source\\\", \\\"Destination\\\"]\\n      domain: [\\\"stk1\\\", \\\"stk2\\\"]\\n    }\\n  ]\\n  axes: [\\n    {\\n      orient: bottom\\n      scale: x\\n      encode: {\\n        labels: {\\n          update: {\\n            text: {scale: \\\"stackNames\\\", field: \\\"value\\\"}\\n          }\\n        }\\n      }\\n    }\\n    {orient: \\\"left\\\", scale: \\\"y\\\"}\\n  ]\\n  marks: [\\n    {\\n      type: path\\n      name: edgeMark\\n      from: {data: \\\"edges\\\"}\\n      clip: true\\n      encode: {\\n        update: {\\n          stroke: [\\n            {\\n              test: groupSelector && groupSelector.stack=='stk1'\\n              scale: color\\n              field: stk2\\n            }\\n            {scale: \\\"color\\\", field: \\\"stk1\\\"}\\n          ]\\n          strokeWidth: {field: \\\"strokeWidth\\\"}\\n          path: {field: \\\"path\\\"}\\n          strokeOpacity: {\\n            signal: !groupSelector && (groupHover.stk1 == datum.stk1 || groupHover.stk2 == datum.stk2) ? 0.9 : 0.3\\n          }\\n          zindex: {\\n            signal: !groupSelector && (groupHover.stk1 == datum.stk1 || groupHover.stk2 == datum.stk2) ? 1 : 0\\n          }\\n          tooltip: {\\n            signal: datum.stk1 + ' → ' + datum.stk2 + '    ' + format(datum.size, ',.0f') + '   (' + format(datum.percentage, '.1%') + ')'\\n          }\\n        }\\n        hover: {\\n          strokeOpacity: {value: 1}\\n        }\\n      }\\n    }\\n    {\\n      type: rect\\n      name: groupMark\\n      from: {data: \\\"groups\\\"}\\n      encode: {\\n        enter: {\\n          fill: {scale: \\\"color\\\", field: \\\"grpId\\\"}\\n          width: {scale: \\\"x\\\", band: 1}\\n        }\\n        update: {\\n          x: {scale: \\\"x\\\", field: \\\"stack\\\"}\\n          y: {field: \\\"scaledY0\\\"}\\n          y2: {field: \\\"scaledY1\\\"}\\n          fillOpacity: {value: 0.6}\\n          tooltip: {\\n            signal: datum.grpId + '   ' + format(datum.total, ',.0f') + '   (' + format(datum.percentage, '.1%') + ')'\\n          }\\n        }\\n        hover: {\\n          fillOpacity: {value: 1}\\n        }\\n      }\\n    }\\n    {\\n      type: text\\n      from: {data: \\\"groups\\\"}\\n      interactive: false\\n      encode: {\\n        update: {\\n          x: {\\n            signal: scale('x', datum.stack) + (datum.rightLabel ? bandwidth('x') + 8 : -8)\\n          }\\n          yc: {signal: \\\"(datum.scaledY0 + datum.scaledY1)/2\\\"}\\n          align: {signal: \\\"datum.rightLabel ? 'left' : 'right'\\\"}\\n          baseline: {value: \\\"middle\\\"}\\n          fontWeight: {value: \\\"bold\\\"}\\n          text: {signal: \\\"abs(datum.scaledY0-datum.scaledY1) > 13 ? datum.grpId : ''\\\"}\\n        }\\n      }\\n    }\\n    {\\n      type: group\\n      data: [\\n        {\\n          name: dataForShowAll\\n          values: [{}]\\n          transform: [{type: \\\"filter\\\", expr: \\\"groupSelector\\\"}]\\n        }\\n      ]\\n      encode: {\\n        enter: {\\n          xc: {signal: \\\"width/2\\\"}\\n          y: {value: 30}\\n          width: {value: 80}\\n          height: {value: 30}\\n        }\\n      }\\n      marks: [\\n        {\\n          type: group\\n          name: groupReset\\n          from: {data: \\\"dataForShowAll\\\"}\\n          encode: {\\n            enter: {\\n              cornerRadius: {value: 6}\\n              fill: {value: \\\"#f5f5f5\\\"}\\n              stroke: {value: \\\"#c1c1c1\\\"}\\n              strokeWidth: {value: 2}\\n              // use parent group's size\\n              height: {\\n                field: {group: \\\"height\\\"}\\n              }\\n              width: {\\n                field: {group: \\\"width\\\"}\\n              }\\n            }\\n            update: {\\n              // groups are transparent by default\\n              opacity: {value: 1}\\n            }\\n            hover: {\\n              opacity: {value: 0.7}\\n            }\\n          }\\n          marks: [\\n            {\\n              type: text\\n              interactive: false\\n              encode: {\\n                enter: {\\n                  xc: {\\n                    field: {group: \\\"width\\\"}\\n                    mult: 0.5\\n                  }\\n                  yc: {\\n                    field: {group: \\\"height\\\"}\\n                    mult: 0.5\\n                    offset: 2\\n                  }\\n                  align: {value: \\\"center\\\"}\\n                  baseline: {value: \\\"middle\\\"}\\n                  fontWeight: {value: \\\"bold\\\"}\\n                  text: {value: \\\"Show All\\\"}\\n                }\\n              }\\n            }\\n          ]\\n        }\\n      ]\\n    }\\n  ]\\n  signals: [\\n    {\\n      name: groupHover\\n      value: {}\\n      on: [\\n        {\\n          events: @groupMark:mouseover\\n          update: \\\"{stk1:datum.stack=='stk1' && datum.grpId, stk2:datum.stack=='stk2' && datum.grpId}\\\"\\n        }\\n        {events: \\\"mouseout\\\", update: \\\"{}\\\"}\\n      ]\\n    }\\n    {\\n      name: groupSelector\\n      value: false\\n      on: [\\n        {\\n          events: @groupMark:click!\\n          update: \\\"{stack:datum.stack, stk1:datum.stack=='stk1' && datum.grpId, stk2:datum.stack=='stk2' && datum.grpId}\\\"\\n        }\\n        {\\n          events: [\\n            {type: \\\"click\\\", markname: \\\"groupReset\\\"}\\n            {type: \\\"dblclick\\\"}\\n          ]\\n          update: \\\"false\\\"\\n        }\\n      ]\\n    }\\n  ]\\n}\"},\"aggs\":[]}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "ec320d40-5dbf-11e8-9384-3fa80ede9472",
+    "_type": "visualization",
+    "_source": {
+      "title": "Table Count Severity Level",
+      "visState": "{\"title\":\"Table Count Severity Level\",\"type\":\"table\",\"params\":{\"perPage\":5,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":true,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Severity Level.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+      "uiStateJSON": "{\"vis\":{\"params\":{\"sort\":{\"columnIndex\":null,\"direction\":null}}}}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"6a66cf70-5d11-11e8-9384-3fa80ede9472\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "2f060520-5da9-11e8-9384-3fa80ede9472",
+    "_type": "visualization",
+    "_source": {
+      "title": "Pie Severity Level",
+      "visState": "{\"title\":\"Pie Severity Level\",\"type\":\"pie\",\"params\":{\"type\":\"pie\",\"addTooltip\":false,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":false,\"labels\":{\"show\":true,\"values\":true,\"last_level\":true,\"truncate\":100}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"segment\",\"params\":{\"field\":\"Severity Level.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":11,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+      "uiStateJSON": "{\"vis\":{\"legendOpen\":true}}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"6a66cf70-5d11-11e8-9384-3fa80ede9472\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "57d1b780-5dac-11e8-9384-3fa80ede9472",
+    "_type": "visualization",
+    "_source": {
+      "title": "Pie Activity Category",
+      "visState": "{\"title\":\"Pie Activity Category\",\"type\":\"pie\",\"params\":{\"type\":\"pie\",\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":false,\"labels\":{\"show\":true,\"values\":true,\"last_level\":true,\"truncate\":100}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"segment\",\"params\":{\"field\":\"Activity Category.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"6a66cf70-5d11-11e8-9384-3fa80ede9472\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "336ea480-5dab-11e8-9384-3fa80ede9472",
+    "_type": "visualization",
+    "_source": {
+      "title": "Pie Activity Name",
+      "visState": "{\"title\":\"Pie Activity Name\",\"type\":\"pie\",\"params\":{\"type\":\"pie\",\"addTooltip\":false,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":false,\"labels\":{\"show\":true,\"values\":true,\"last_level\":true,\"truncate\":100}},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"segment\",\"params\":{\"field\":\"Activity Name.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"6a66cf70-5d11-11e8-9384-3fa80ede9472\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "a4066ad0-5dc3-11e8-9384-3fa80ede9472",
+    "_type": "visualization",
+    "_source": {
+      "title": "Table Count Activity Category",
+      "visState": "{\"title\":\"Table Count Activity Category\",\"type\":\"table\",\"params\":{\"perPage\":5,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":true,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Activity Category.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+      "uiStateJSON": "{\"vis\":{\"params\":{\"sort\":{\"columnIndex\":null,\"direction\":null}}}}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"6a66cf70-5d11-11e8-9384-3fa80ede9472\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  },
+  {
+    "_id": "a2916190-5dc4-11e8-9384-3fa80ede9472",
+    "_type": "visualization",
+    "_source": {
+      "title": "Table Count Activity Name",
+      "visState": "{\"title\":\"Table Count Activity Name\",\"type\":\"table\",\"params\":{\"perPage\":5,\"showPartialRows\":false,\"showMeticsAtAllLevels\":false,\"sort\":{\"columnIndex\":null,\"direction\":null},\"showTotal\":true,\"totalFunc\":\"sum\"},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"bucket\",\"params\":{\"field\":\"Activity Name.keyword\",\"otherBucket\":false,\"otherBucketLabel\":\"Other\",\"missingBucket\":false,\"missingBucketLabel\":\"Missing\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\"}}]}",
+      "uiStateJSON": "{\"vis\":{\"params\":{\"sort\":{\"columnIndex\":null,\"direction\":null}}}}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"6a66cf70-5d11-11e8-9384-3fa80ede9472\",\"filter\":[],\"query\":{\"query\":\"\",\"language\":\"lucene\"}}"
+      }
+    },
+    "_meta": {
+      "savedObjectVersion": 2
+    }
+  }
+]

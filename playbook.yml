@@ -236,6 +236,26 @@
 
 
 
+    # - name: import io visualizations
+    #   shell: curl -XPOST localhost:5601/api/kibana/dashboards/import -H 'kbn-xsrf:true' -H 'Content-type:application/json' -d @/vagrant/kibana/dashboard/io-visualization.json
+
+    # - name: import io dashboard
+    #   shell: curl -XPOST localhost:5601/api/kibana/dashboards/import -H 'kbn-xsrf:true' -H 'Content-type:application/json' -d @/vagrant/kibana/dashboard/io-dashboard.json
+
+    # - name: import catalog dasboard
+    #   shell: curl -XPOST localhost:5601/api/kibana/dashboards/import -H 'kbn-xsrf:true' -H 'Content-type:application/json' -d @/vagrant/kibana/dashboard/kibana-catalogs-dashbord.json
+
+    # - name: add pattern
+    #   shell: curl -XPUT localhost:9200/.kibana/index-pattern/logstash -H 'Content-Type:application/json' -d @/vagrant/kibana/index/pattern.json
+
+    # - name: add pattern
+    #   shell: curl -XPUT localhost:9200/.kibana/config/6.2.4 -H 'Content-Type:application/json' -d @/vagrant/kibana/index/default.json
+
+
+
+
+
+
 
 #    - name: install the 'Gnome desktop' environment group
 #      yum:
